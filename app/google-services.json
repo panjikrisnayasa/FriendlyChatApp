@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "546493335833",
+    "firebase_url": "https://talkie-7ee52.firebaseio.com",
+    "project_id": "talkie-7ee52",
+    "storage_bucket": "talkie-7ee52.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:546493335833:android:574fb8d1ac51fdb6",
+        "android_client_info": {
+          "package_name": "com.panjikrisnayasa.friendlychatapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "546493335833-ctcla1fo0fjrn7cbu3jlg810tqgpunla.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.panjikrisnayasa.friendlychatapp",
+            "certificate_hash": "711c44dad34237f0c2a999b556aebf56aba54e68"
+          }
+        },
+        {
+          "client_id": "546493335833-ta61li1seb0rtv3v5pn436ohs7oe7ik2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD2q5_dUsqhLyaAfkUQsbYoSerey2m-8kc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "546493335833-ta61li1seb0rtv3v5pn436ohs7oe7ik2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

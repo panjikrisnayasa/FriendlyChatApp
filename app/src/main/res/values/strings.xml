@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Talkie</string>
+    <string name="main_button_send">Send</string>
+    <string name="main_hint_type_your_message_here">Type your message here</string>
+    <string name="item_recycler_view_main_chat_text_message_sender">Message sender</string>
+    <string name="item_recycler_view_main_chat_text_here_is_some_message_you_send_or_sent_to_you">Here is some message you send or sent to you</string>
+    <string name="item_recycler_view_main_chat_content_description_uploaded_image">Uploaded image</string>
+    <string name="menu_main_logout">Logout</string>
+</resources>
