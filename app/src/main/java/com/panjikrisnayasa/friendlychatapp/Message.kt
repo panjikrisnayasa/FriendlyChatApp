@@ -3,17 +3,27 @@ package com.panjikrisnayasa.friendlychatapp
 import android.os.Parcel
 import android.os.Parcelable
 
-class Message(var message: String? = "", var sender: String? = "", var image: String? = "") : Parcelable {
+class Message(
+    var id: String? = "",
+    var message: String? = "",
+    var sender: String? = "",
+    var image: String? = "",
+    var read: Boolean? = false
+) : Parcelable {
     constructor(parcel: Parcel) : this(
         parcel.readString(),
         parcel.readString(),
-        parcel.readString()
+        parcel.readString(),
+        parcel.readString(),
+        parcel.readValue(Boolean::class.java.classLoader) as? Boolean
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        parcel.writeString(id)
         parcel.writeString(message)
         parcel.writeString(sender)
         parcel.writeString(image)
+        parcel.writeValue(read)
     }
 
     override fun describeContents(): Int {

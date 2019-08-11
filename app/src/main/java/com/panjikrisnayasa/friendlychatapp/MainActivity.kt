@@ -1,6 +1,10 @@
 package com.panjikrisnayasa.friendlychatapp
 
 import android.app.Activity
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
@@ -10,6 +14,7 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
@@ -25,6 +30,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
         const val ANONYMOUS = "Anonymous"
         const val RC_SIGN_IN = 1
         const val RC_PHOTO_PICKER = 2
+        const val PRIMARY_CHANNEL_ID = "primary_notification_channel"
+        const val NOTIFICATION_ID = 0
     }
 
     private var list: ArrayList<Message> = arrayListOf()
@@ -40,6 +47,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
 
     //firebase images storage
     private lateinit var mImagesStorageReference: StorageReference
+
+    //notification
+    private lateinit var mNotificationManager: NotificationManager
+
+    private lateinit var mChildEventListener: ChildEventListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,6 +100,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
                 }, 100)
             }
         }
+
+        createNotificationChannel()
     }
 
     override fun onResume() {
@@ -98,7 +112,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
     override fun onPause() {
         super.onPause()
         mAuth.removeAuthStateListener(mAuthStateListener)
-        mDatabaseReference.removeEventListener(this)
+        mDatabaseReference.removeEventListener(mChildEventListener)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -116,8 +130,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
             photoRef.putFile(selectedImageUri).addOnSuccessListener {
                 photoRef.downloadUrl.addOnSuccessListener {
                     val downloadUrl = it.toString()
-                    val message = Message("", mUsername, downloadUrl)
-                    mDatabaseReference.push().setValue(message)
+
+                    val keyPath = mDatabaseReference.push()
+                    val message = Message(keyPath.key, "", mUsername, downloadUrl, false)
+                    keyPath.setValue(message)
                 }
             }
         }
@@ -127,8 +143,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
         when (v?.id) {
             R.id.button_main_send_chat -> {
                 //firebase
-                val message = Message(edit_text_main_chat_message.text.toString(), mUsername, "")
-                mDatabaseReference.push().setValue(message)
+                val keyPath = mDatabaseReference.push()
+                val message = Message(
+                    keyPath.key,
+                    edit_text_main_chat_message.text.toString(),
+                    mUsername,
+                    "",
+                    false
+                )
+                keyPath.setValue(message)
 
                 edit_text_main_chat_message.text.clear()
             }
@@ -151,13 +174,19 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
     override fun onChildAdded(p0: DataSnapshot, p1: String?) {
         val message = p0.getValue(Message::class.java)
         if (message != null) {
+            if (message.read == false) {
+                if (message.sender != mUsername) {
+                    sendNotification()
+                }
+                mDatabaseReference.child(message?.id.toString()).child("read").setValue(true)
+            }
             list.add(message)
             showRecyclerView()
         }
     }
 
-    override fun onChildRemoved(p0: DataSnapshot) {}
     //firebase
+    override fun onChildRemoved(p0: DataSnapshot) {}
 
     override fun afterTextChanged(s: Editable?) {}
 
@@ -195,13 +224,47 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
         if (displayName != null) {
             mUsername = displayName
         }
-        mDatabaseReference.addChildEventListener(this)
+        mChildEventListener = mDatabaseReference.addChildEventListener(this)
         showRecyclerView()
     }
 
     private fun onSignOutClean() {
         mUsername = ANONYMOUS
-        mDatabaseReference.removeEventListener(this)
+        mDatabaseReference.removeEventListener(mChildEventListener)
         list.clear()
+    }
+
+    private fun sendNotification() {
+        val notificationBuilder = getNotificationBuilder()
+        mNotificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
+    }
+
+    private fun createNotificationChannel() {
+        mNotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val notificationChannel =
+                NotificationChannel(PRIMARY_CHANNEL_ID, "New Message Notification", NotificationManager.IMPORTANCE_HIGH)
+            notificationChannel.enableLights(true)
+            notificationChannel.enableVibration(true)
+            notificationChannel.description = "New message"
+            mNotificationManager.createNotificationChannel(notificationChannel)
+        }
+    }
+
+    private fun getNotificationBuilder(): NotificationCompat.Builder {
+        val notificationIntent = Intent(this, MainActivity::class.java)
+        val notificationPendingIntent =
+            PendingIntent.getActivity(this, NOTIFICATION_ID, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+        val notificationBuilder = NotificationCompat.Builder(this, PRIMARY_CHANNEL_ID)
+            .setContentTitle("Talkie")
+            .setContentText("There is new message for you")
+            .setSmallIcon(R.drawable.ic_mood_24dp)
+            .setContentIntent(notificationPendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setDefaults(NotificationCompat.DEFAULT_ALL)
+        return notificationBuilder
     }
 }
