@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -50,8 +51,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
 
     //notification
     private lateinit var mNotificationManager: NotificationManager
-
-    private lateinit var mChildEventListener: ChildEventListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -112,7 +111,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
     override fun onPause() {
         super.onPause()
         mAuth.removeAuthStateListener(mAuthStateListener)
-        mDatabaseReference.removeEventListener(mChildEventListener)
+        mDatabaseReference.removeEventListener(this)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -176,9 +175,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
         if (message != null) {
             if (message.read == false) {
                 if (message.sender != mUsername) {
-                    sendNotification()
+                    Log.d("Panji", message.sender.toString())
+                    Log.d("Panji", message.message.toString())
+                    sendNotification(message.sender, message.message)
                 }
-                mDatabaseReference.child(message?.id.toString()).child("read").setValue(true)
+                mDatabaseReference.child(message.id.toString()).child("read").setValue(true)
             }
             list.add(message)
             showRecyclerView()
@@ -224,18 +225,18 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
         if (displayName != null) {
             mUsername = displayName
         }
-        mChildEventListener = mDatabaseReference.addChildEventListener(this)
+        mDatabaseReference.addChildEventListener(this)
         showRecyclerView()
     }
 
     private fun onSignOutClean() {
         mUsername = ANONYMOUS
-        mDatabaseReference.removeEventListener(mChildEventListener)
+        mDatabaseReference.removeEventListener(this)
         list.clear()
     }
 
-    private fun sendNotification() {
-        val notificationBuilder = getNotificationBuilder()
+    private fun sendNotification(sender: String?, message: String?) {
+        val notificationBuilder = getNotificationBuilder(sender, message)
         mNotificationManager.notify(NOTIFICATION_ID, notificationBuilder.build())
     }
 
@@ -252,14 +253,14 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
         }
     }
 
-    private fun getNotificationBuilder(): NotificationCompat.Builder {
+    private fun getNotificationBuilder(sender: String?, message: String?): NotificationCompat.Builder {
         val notificationIntent = Intent(this, MainActivity::class.java)
         val notificationPendingIntent =
             PendingIntent.getActivity(this, NOTIFICATION_ID, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT)
 
         val notificationBuilder = NotificationCompat.Builder(this, PRIMARY_CHANNEL_ID)
-            .setContentTitle("Talkie")
-            .setContentText("There is new message for you")
+            .setContentTitle(sender)
+            .setContentText(message)
             .setSmallIcon(R.drawable.ic_mood_24dp)
             .setContentIntent(notificationPendingIntent)
             .setAutoCancel(true)
