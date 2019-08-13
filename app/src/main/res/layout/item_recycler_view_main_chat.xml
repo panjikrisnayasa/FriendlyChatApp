@@ -20,6 +20,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/text_item_recycler_view_main_chat_sender"
+        android:background="@drawable/background_chat_baloon"
+        android:padding="8dp"
         android:text="@string/item_recycler_view_main_chat_text_here_is_some_message_you_send_or_sent_to_you" />
 
     <ImageView
@@ -29,7 +31,11 @@
         android:layout_below="@id/text_item_recycler_view_main_chat_sender"
         android:layout_marginTop="4dp"
         android:adjustViewBounds="true"
-        android:scaleType="centerCrop"
-        android:contentDescription="@string/item_recycler_view_main_chat_content_description_uploaded_image" />
+        android:background="@drawable/background_uploaded_photo"
+        android:clickable="true"
+        android:contentDescription="@string/item_recycler_view_main_chat_content_description_uploaded_image"
+        android:focusable="true"
+        android:foreground="?android:selectableItemBackground"
+        android:scaleType="centerCrop" />
 
 </RelativeLayout>

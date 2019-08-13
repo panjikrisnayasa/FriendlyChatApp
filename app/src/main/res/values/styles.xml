@@ -23,12 +23,13 @@
 
     <style name="TextStyle.Regular" parent="TextAppearance.AppCompat.Caption">
         <item name="android:textSize">16sp</item>
-        <item name="android:textColor">@android:color/black</item>
+        <item name="android:textColor">@android:color/white</item>
     </style>
 
     <style name="TextStyle.Tiny" parent="TextAppearance.AppCompat.Caption">
         <item name="android:textSize">14sp</item>
         <item name="android:fontFamily">@font/roboto_light</item>
+        <item name="android:textColor">@android:color/white</item>
     </style>
 
 </resources>

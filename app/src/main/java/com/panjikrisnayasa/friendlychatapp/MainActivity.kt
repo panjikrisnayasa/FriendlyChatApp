@@ -9,10 +9,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
@@ -25,7 +25,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, ChildEventListener {
+class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, ChildEventListener, ValueEventListener {
 
     companion object {
         const val ANONYMOUS = "Anonymous"
@@ -51,6 +51,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
 
     //notification
     private lateinit var mNotificationManager: NotificationManager
+
+    private lateinit var mChildEventListener: ChildEventListener
+    private lateinit var mValueEventListener: ValueEventListener
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,7 +114,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
     override fun onPause() {
         super.onPause()
         mAuth.removeAuthStateListener(mAuthStateListener)
-        mDatabaseReference.removeEventListener(this)
+        mDatabaseReference.removeEventListener(mChildEventListener)
+        mDatabaseReference.removeEventListener(mValueEventListener)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -142,24 +146,35 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
         when (v?.id) {
             R.id.button_main_send_chat -> {
                 //firebase
-                val keyPath = mDatabaseReference.push()
-                val message = Message(
-                    keyPath.key,
-                    edit_text_main_chat_message.text.toString(),
-                    mUsername,
-                    "",
-                    false
-                )
-                keyPath.setValue(message)
-
-                edit_text_main_chat_message.text.clear()
+                if (edit_text_main_chat_message.text.isNotBlank()) {
+                    val keyPath = mDatabaseReference.push()
+                    val message = Message(
+                        keyPath.key,
+                        edit_text_main_chat_message.text.toString(),
+                        mUsername,
+                        "",
+                        false
+                    )
+                    keyPath.setValue(message)
+                    edit_text_main_chat_message.text.clear()
+                }
             }
             R.id.image_view_main_insert_image -> {
                 val imageIntent = Intent(Intent.ACTION_GET_CONTENT)
                 imageIntent.type = "image/jpeg"
                 imageIntent.putExtra(Intent.EXTRA_LOCAL_ONLY, true)
                 startActivityForResult(Intent.createChooser(imageIntent, "Complete action using"), RC_PHOTO_PICKER)
+                progress_bar_main.visibility = View.VISIBLE
             }
+        }
+    }
+
+    override fun onDataChange(p0: DataSnapshot) {
+        if (!p0.hasChild("messages")) {
+            progress_bar_main.visibility = View.GONE
+            button_main_send_chat.isEnabled = true
+            edit_text_main_chat_message.isEnabled = true
+            image_view_main_insert_image.isEnabled = true
         }
     }
 
@@ -175,8 +190,9 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
         if (message != null) {
             if (message.read == false) {
                 if (message.sender != mUsername) {
-                    Log.d("Panji", message.sender.toString())
-                    Log.d("Panji", message.message.toString())
+                    if (message.message == "") {
+                        message.message = "${message.sender} sent a photo"
+                    }
                     sendNotification(message.sender, message.message)
                 }
                 mDatabaseReference.child(message.id.toString()).child("read").setValue(true)
@@ -184,10 +200,14 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
             list.add(message)
             showRecyclerView()
         }
+        progress_bar_main.visibility = View.GONE
+        button_main_send_chat.isEnabled = true
+        edit_text_main_chat_message.isEnabled = true
+        image_view_main_insert_image.isEnabled = true
     }
 
-    //firebase
     override fun onChildRemoved(p0: DataSnapshot) {}
+    //firebase
 
     override fun afterTextChanged(s: Editable?) {}
 
@@ -225,13 +245,21 @@ class MainActivity : AppCompatActivity(), View.OnClickListener, TextWatcher, Chi
         if (displayName != null) {
             mUsername = displayName
         }
-        mDatabaseReference.addChildEventListener(this)
+        mChildEventListener = mDatabaseReference.addChildEventListener(this)
+        mValueEventListener = mDatabaseReference.addValueEventListener(this)
         showRecyclerView()
+
+        progress_bar_main.visibility = View.VISIBLE
+        button_main_send_chat.isEnabled = false
+        edit_text_main_chat_message.isEnabled = false
+        image_view_main_insert_image.isEnabled = false
     }
 
     private fun onSignOutClean() {
         mUsername = ANONYMOUS
-        mDatabaseReference.removeEventListener(this)
+        mAuth.removeAuthStateListener(mAuthStateListener)
+        mDatabaseReference.removeEventListener(mChildEventListener)
+        mDatabaseReference.removeEventListener(mValueEventListener)
         list.clear()
     }
 

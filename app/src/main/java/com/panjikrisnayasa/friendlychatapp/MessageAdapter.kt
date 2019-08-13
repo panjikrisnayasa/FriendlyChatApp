@@ -32,6 +32,11 @@ class MessageAdapter(private val listMessage: ArrayList<Message>) :
             p0.mImage.visibility = View.GONE
             p0.mTextMessage.text = message.message
         }
+
+        p0.mImage.setOnClickListener {
+
+        }
+        p0.mImage.clipToOutline = true
     }
 
     inner class MessageHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
