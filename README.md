@@ -1,6 +1,6 @@
 # FriendlyChatApp
 
-A simple chat app with firebase
+A simple chat app with firebase.
 
 ![1](https://user-images.githubusercontent.com/48062932/63910680-e8e51600-ca51-11e9-9b64-19954fa38f8c.png)
 
